@@ -1,0 +1,18 @@
+# activate virtual env
+# win:
+venv\Scripts\activate
+
+# mac / linux:
+source venv/bin/activate
+
+
+git init
+git add .
+git commit -m "any message"
+git remote add origin <URL>
+git push -u origin master
+
+#next time
+git add .
+git commit -m "ANY MESSAGE"
+git push
