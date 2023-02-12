@@ -76,12 +76,42 @@ def search_product(text):
 
 @app.get("/api/categories")
 def get_catagories():
-   results = []
-   for prod in mock_catalog:
-       cat + prod["category"]
-   
-   
+    results = []
+    for prod in mock_catalog:
+       cat = prod["category"]
+       if cat not in results:
+           results.append(cat)
+
+    return json.dumps(results)
+
+@app.get("/api/total")
+def get_total():
+    total = 0
+    for prod in mock_catalog:
+        total += prod["price"]
+
+    return json.dumps(total)
+
+@app.get("/api/cheaper/<price>")
+def get_cheaper(price):
+        price = float(price)
+        results = []
+        for prod in mock_catalog:
+            if prod["price"] <= price:
+                results.append(prod)
+
+        return json.dumps(results)
 
 
+# challenge
+# find and return the cheapest product
+
+# create a cheapest = mock_catalog[0]
+# for loop to travel the list
+# get every prod from the list
+# if the price of prod is lower than the price of cheapest
+# then update cheapest to be the prod (cheapest = prod)
+
+    
 app.run(debug=True)
 
