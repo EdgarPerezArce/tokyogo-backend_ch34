@@ -1,6 +1,7 @@
-from flask import Flask,abort
+from flask import Flask,abort, request
 from data import me,mock_catalog
-
+from config import db
+from bson import ObjectId
 import json
 
 app = Flask(__name__) # creating a new instance, similar to new Task in JS
@@ -35,54 +36,73 @@ def developer_address():
     # f string
     return f'{address["street"]} #{address["number"]}, {address["city"]}, {address["zip"]}'
 
+def fix_id(obj):
+    obj["_id"] = str(obj["_id"])
+
 # get /api/catalog
 # return the list of products as JSSON
 @app.get("/api/catalog")
 def tokyogo_catalog():
-    return json.dumps(mock_catalog)
+    cursor = db.products.find({})
+    results = []
+    for prod in cursor:
+        fix_id(prod)
+        results.append(prod)
+
+    return json.dumps(results)
+
+@app.post("/api/catalog")
+def save_product():
+    data = request.get_json()
+    db.products.insert_one(data)
+    fix_id(data)
+    return json.dumps(data)
 
 @app.get("/api/catalog/count")
 def tokyogo_count():
-    count = len(mock_catalog)
-    return json.dumps(count)
+    total = db.products.count_documents({})
+    return json.dumps(total)
 
 
-@app.get("/api/catagory/<shirts>")
-def prod_by_catagory(shirts):
+@app.get("/api/catagory/<cat>")
+def prod_by_catagory(cat):
+    cursor = db.products.find({"category" : cat})
     results = []
-    for prod in mock_catalog:
-        if prod["category"] == shirts:
-            results.append(prod)
+
+    for prod in cursor:
+        fix_id(prod)
+        results.append(prod)
 
 
     return json.dumps(results)
 
 @app.get("/api/product/<id>")
 def prod_by_id(id):
-    for prod in mock_catalog:
-        if prod["_id"] == id:
-            return json.dumps(prod) 
+    _id = ObjectId(id)
+    prod = db.products.find_one({"_id" : _id})
+    if prod is None:
+        return abort(404, "Invalid id")
+    
+    fix_id(prod)
+    return json.dumps(prod)
 
-    return abort(404, "Invalid id")           
+               
 
 @app.get("/api/product/search/<text>")
 def search_product(text):
+    #search the product whose title containes the text (case insensitive)
+    cursor = db.products.find({ "title" : { "$regex": text, "$options": "1"} })
     results = []
-    for prod in mock_catalog:
-        if text.lower() in prod["title"].lower():
-            results.append(prod)
+    for prod in cursor:
+        fix_id(prod)
+        results.append(prod)
 
     return json.dumps(results)
 
 @app.get("/api/categories")
 def get_catagories():
-    results = []
-    for prod in mock_catalog:
-       cat = prod["category"]
-       if cat not in results:
-           results.append(cat)
-
-    return json.dumps(results)
+    cursor = db.products.distinct("category")
+    return json.dumps(list(cursor))
 
 @app.get("/api/total")
 def get_total():
