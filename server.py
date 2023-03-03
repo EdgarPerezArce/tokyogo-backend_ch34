@@ -3,9 +3,10 @@ from data import me,mock_catalog
 from config import db
 from bson import ObjectId
 import json
+from flask_cors import CORS
 
 app = Flask(__name__) # creating a new instance, similar to new Task in JS
-
+CORS(app) #warning:disable CORS policy
 @app.get("/")
 def home():
     return "Hello World!"
